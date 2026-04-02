@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Träningsprogram</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface2: #222222;
+  --border: #2e2e2e;
+  --green: #4ade80;
+  --green-dim: #166534;
+  --green-bg: #052e16;
+  --text: #e8e8e8;
+  --text-muted: #888;
+  --text-dim: #555;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; min-height: 100vh; padding-bottom: 60px; }
+header { padding: 24px 20px 0; margin-bottom: 20px; }
+.header-top { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+h1 { font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
+.header-tag { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--green); background: var(--green-bg); padding: 2px 8px; border-radius: 999px; }
+.header-sub { font-size: 13px; color: var(--text-muted); }
+.week-bar { display: flex; align-items: center; gap: 10px; padding: 0 20px; margin-bottom: 20px; }
+.week-label { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text-muted); flex: 1; }
+.week-btn { background: var(--surface); border: 0.5px solid var(--border); color: var(--text-muted); font-size: 18px; width: 36px; height: 36px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+.week-btn:hover { background: var(--surface2); color: var(--text); }
+.day-tabs { display: flex; gap: 6px; padding: 0 20px; margin-bottom: 20px; overflow-x: auto; scrollbar-width: none; }
+.day-tabs::-webkit-scrollbar { display: none; }
+.day-tab { flex-shrink: 0; padding: 8px 14px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); background: var(--surface); color: var(--text-muted); font-size: 13px; cursor: pointer; transition: all 0.15s; position: relative; }
+.day-tab:hover { background: var(--surface2); color: var(--text); }
+.day-tab.active { background: var(--green); color: var(--green-bg); border-color: var(--green); font-weight: 500; }
+.day-tab .dot { position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--green); display: none; }
+.day-tab.has-progress .dot { display: block; }
+.day-tab.active .dot { display: none; }
+.panel { display: none; padding: 0 20px; }
+.panel.active { display: block; }
+.card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 12px; }
+.card-title { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 14px; }
+.progress-wrap { background: var(--surface2); border-radius: 999px; height: 4px; margin-bottom: 4px; }
+.progress-fill { background: var(--green); border-radius: 999px; height: 4px; transition: width 0.3s; }
+.progress-text { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-dim); }
+.check-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid var(--border); cursor: pointer; user-select: none; }
+.check-item:last-child { border-bottom: none; padding-bottom: 0; }
+.check-item:first-child { padding-top: 0; }
+.check-box { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--border); background: transparent; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.check-box.checked { background: var(--green); border-color: var(--green); }
+.check-box.checked::after { content: ''; width: 10px; height: 6px; border-left: 2px solid var(--green-bg); border-bottom: 2px solid var(--green-bg); transform: rotate(-45deg) translateY(-1px); display: block; }
+.check-body { flex: 1; min-width: 0; }
+.check-name { font-size: 14px; color: var(--text); line-height: 1.4; transition: color 0.15s; }
+.check-item.done .check-name { color: var(--text-dim); text-decoration: line-through; }
+.check-meta { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--green); margin-top: 2px; }
+.check-item.done .check-meta { color: var(--text-dim); }
+.check-note { font-size: 12px; color: var(--text-muted); margin-top: 3px; line-height: 1.5; }
+.weight-row { display: flex; align-items: center; gap: 8px; margin-top: 7px; flex-wrap: wrap; }
+.weight-label { font-size: 11px; color: var(--text-dim); }
+.weight-input { background: var(--surface2); border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; padding: 4px 8px; width: 80px; outline: none; text-align: center; }
+.weight-input:focus { border-color: var(--green); }
+.weight-input::placeholder { color: var(--text-dim); }
+.weight-prev { font-size: 11px; color: var(--text-dim); font-family: 'DM Mono', monospace; }
+.timeline { position: relative; padding-left: 24px; }
+.timeline::before { content: ''; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 1px; background: var(--border); }
+.tl-step { position: relative; margin-bottom: 14px; }
+.tl-step:last-child { margin-bottom: 0; }
+.tl-dot { position: absolute; left: -20px; top: 5px; width: 8px; height: 8px; border-radius: 50%; background: var(--green); border: 2px solid var(--bg); }
+.tl-time { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--green); margin-bottom: 2px; }
+.tl-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.tl-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+.tl-dose { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--green); margin-top: 3px; }
+.section-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin: 18px 0 10px; }
+.section-label:first-child { margin-top: 0; }
+.rest-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 24px 20px; text-align: center; margin-bottom: 12px; }
+.rest-icon { font-size: 28px; margin-bottom: 8px; display: block; }
+.rest-title { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+.rest-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+.med-intro { font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.6; padding-bottom: 14px; border-bottom: 0.5px solid var(--border); }
+.med-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.med-tab { font-size: 12px; padding: 5px 12px; border-radius: 999px; border: 0.5px solid var(--border); background: var(--surface2); color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+.med-tab.active { background: var(--green); color: var(--green-bg); border-color: var(--green); }
+.med-method { display: none; }
+.med-method.active { display: block; }
+.med-method-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+.med-method-time { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--green); margin-bottom: 12px; }
+.med-step { display: flex; gap: 10px; margin-bottom: 9px; align-items: flex-start; }
+.med-step-num { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--green); min-width: 18px; }
+.med-step-text { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+.med-tip { background: var(--surface2); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-top: 12px; border-left: 2px solid var(--green-dim); }
+.reflection textarea { width: 100%; background: var(--surface2); border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 10px 12px; resize: none; height: 80px; outline: none; }
+.reflection textarea:focus { border-color: var(--green); }
+.reflection textarea::placeholder { color: var(--text-dim); }
+.info-pill { display: inline-flex; align-items: center; gap: 5px; background: var(--green-bg); color: var(--green); font-family: 'DM Mono', monospace; font-size: 11px; padding: 3px 10px; border-radius: 999px; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1>Träningsprogram</h1>
+    <span class="header-tag">Fas 1</span>
+  </div>
+  <div class="header-sub">Styrka · Rörlighet · Meditation</div>
+</header>
+
+<div class="week-bar">
+  <button class="week-btn" onclick="changeWeek(-1)">‹</button>
+  <div class="week-label" id="weekLabel">Vecka 1</div>
+  <button class="week-btn" onclick="changeWeek(1)">›</button>
+</div>
+
+<div class="day-tabs" id="dayTabs"></div>
+<div id="panels"></div>
+
+<script>
+const DAYS = ['Mån','Tis','Ons','Tor','Fre','Lör','Sön'];
+const DAY_TYPE = ['styrka','promenad','vila','styrka','promenad','rörlighet','vila'];
+
+let currentWeek = 1;
+let currentDay = 0;
+
+function key(week, day, id) { return 'w'+week+'_d'+day+'_'+id; }
+function wkey(n) { return 'weight_'+n.replace(/\s+/g,'_').replace(/[()]/g,''); }
+function save(k,v){ try{localStorage.setItem(k,v);}catch(e){} }
+function load(k,d){ try{return localStorage.getItem(k)??d;}catch(e){return d;} }
+
+const WARMUP_A = [
+  {name:'Lätt promenad / stegmarsch',time:'0–2 min',desc:'Igång, höj pulsen lite. Armarna med.'},
+  {name:'Knä mot vägg — anklar',time:'2–4 min',desc:'Barfota mot väggen. Din viktigaste uppvärmningsövning.',dose:'1 min per sida'},
+  {name:'Hip circles + leg swings',time:'4–6 min',desc:'Stå på ett ben, svinga det andra fram/bak och åt sidan.',dose:'10 rep per sida'},
+  {name:'Kroppsviktsknäböj — långsamt',time:'6–8 min',desc:'Fokus på djup och position. Håll 2 sek i botten.',dose:'10–15 rep'},
+  {name:'Uppvärmningsset — bara stången',time:'8–10 min',desc:'Knäböj × 8, bänkpress × 8. Känn rörelsen, inte belastningen.'},
+];
+const WARMUP_B = [
+  {name:'Lätt promenad / stegmarsch',time:'0–2 min',desc:'Igång, höj pulsen lite.'},
+  {name:'Cat-cow + thorakal rotation',time:'2–4 min',desc:'På alla fyra — böj och sträck ryggen × 10. Rotera överkroppen × 8 per sida.',dose:'2 varv'},
+  {name:'Axelrotationer + arm circles',time:'4–6 min',desc:'Stora cirklar med armarna, båda håll × 10. Sedan armarna ut × 15.',dose:'2 varv'},
+  {name:'Hip hinge med stången',time:'6–8 min',desc:'Stång längs ryggen, böj i höften med rak rygg. Förberedelse för marklyft.',dose:'10 rep'},
+  {name:'Uppvärmningsset — bara stången',time:'8–10 min',desc:'Marklyft × 5, OHP × 8. Sedan på med vikt.'},
+];
+const STRENGTH_A = [
+  {name:'Knäböj med skivstång',sets:'3 × 8 rep',note:'Hälarna på viktskiva om anklarna begränsar. Fokus: rygg rak, knän utåt.'},
+  {name:'Bänkpress',sets:'3 × 8 rep',note:'Skulderbladen ihop och ner. Kontrollerat tempo ned.'},
+  {name:'Rumänsk marklyft RDL',sets:'3 × 10 rep',note:'Känn sträck i baksida lår, håll ryggen neutral.'},
+  {name:'Skivstångsrodd',sets:'3 × 10 rep',note:'Överkroppen ca 45°, drag mot naveln. Håll kärnspänning.'},
+];
+const STRENGTH_B = [
+  {name:'Marklyft',sets:'3 × 6 rep',note:'Höfter ner, bröst upp, stången nära kroppen. Teknikfokus.'},
+  {name:'Militärpress OHP',sets:'3 × 8 rep',note:'Stå. Press rakt upp, spänn sätesmusklerna.'},
+  {name:'Goblet squat',sets:'3 × 10 rep',note:'Håll vikten mot bröstet. Tränar hukposition aktivt.'},
+  {name:"Farmer's carry",sets:'3 × 20–30 m',note:'Bär vikter med rak rygg och spända axlar.',noWeight:true},
+];
+const MOBILITY = [
+  {section:'Anklar — 10 min',items:[
+    {name:'Knä mot vägg',time:'0–4 min',desc:'Barfota. Stor tå nära väggen, tryck knät utan att hälen lyfts.',dose:'2 min per sida'},
+    {name:'Vadstretch — rakt ben',time:'4–7 min',desc:'Mot vägg. Känn sträck i den stora vadmuskeln.',dose:'90 sek per sida'},
+    {name:'Vadstretch — böjt knä soleus',time:'7–10 min',desc:'Samma men böj knät lite. Viktigaste muskeln för ankelrörlighet.',dose:'90 sek per sida'},
+  ]},
+  {section:'Huksittning — 10 min',items:[
+    {name:'Deep squat hold med stöd',time:'10–13 min',desc:'Håll i racket. Sjunk djupt med hälarna i golvet. Andas djupt, sjunk lite djupare vid varje utandning.',dose:'3 × 60 sek'},
+    {name:'Elevated heel squat',time:'13–16 min',desc:'Hälarna på viktskiva. Sjunk djupt utan stöd, armarna framåt.',dose:'3 × 10 rep, 2 sek i botten'},
+    {name:'Goblet squat rörlighetsvariant',time:'16–20 min',desc:'Lätt skivstångsskiva mot bröstet. Tryck knäna utåt med armbågarna. Sitt i botten.',dose:'3 × 8 rep, långsamt'},
+  ]},
+  {section:'Höft & nedre rygg — 10 min',items:[
+    {name:'90/90 höftsträckning',time:'20–24 min',desc:'Båda benen i 90° vinkel. Ryggen rak, luta dig lätt framåt.',dose:'2 min per sida'},
+    {name:'Hip flexor stretch',time:'24–27 min',desc:'Halvknäböj på ett knä, skjut höften framåt. Viktigt efter sittande dag.',dose:'90 sek per sida'},
+    {name:'Cat-cow + thorakal rotation',time:'27–30 min',desc:'Böj/sträck ryggen × 10. Rotera överkroppen × 10 per sida.',dose:'2 varv'},
+  ]},
+  {section:'Axlar & överkropp — 7 min',items:[
+    {name:'Axelrotationer + arm circles',time:'30–34 min',desc:'Stora cirklar båda håll × 15. Armarna ut åt sidan × 15.',dose:'2 varv'},
+    {name:'Bröstöppnare mot vägg',time:'34–37 min',desc:'Armarna i 90° mot dörrkarmen. Luta dig framåt tills du känner sträck.',dose:'3 × 30 sek'},
+  ]},
+];
+const MEDITATION = [
+  {id:'andning',label:'Andningsfokus',title:'Fokus på andningen',time:'10–20 min',
+    steps:[
+      'Sitt bekvämt — stol, golv, soffa. Rak nog rygg att du kan andas fritt.',
+      'Blunda eller låt blicken vila på en punkt framför dig.',
+      'Börja räkna andetagen. Inandning: ett. Utandning: två. Fortsätt till tio, börja om.',
+      'När en tanke dyker upp — notera bara att du tänkte, och gå tillbaka till räkningen. Börja om från ett.',
+      'Känn hur luften rör sig in genom näsan. Känn bröstkorgen och magen röra sig.',
+      'Avsluta med att sitta still en stund utan att räkna. Notera hur kroppen känns.',
+    ],
+    tip:'Det är helt normalt att tappa räkningen konstant i början. Det är inte ett misslyckande — att märka det och börja om är själva övningen.'},
+  {id:'ljud',label:'Ljud & mantra',title:'Fokus på ljud eller mantra',time:'10–15 min',
+    steps:[
+      'Sitt bekvämt. Blunda.',
+      'Välj ett neutralt ord — "ett", "nu", "här". Inget magiskt, bara ett konkret ankare.',
+      'Upprepa ordet tyst vid varje utandning. Inandning — paus — utandning: "ett".',
+      'Om tankar dyker upp, låt dem passera. Gå tillbaka till ordet.',
+      'Alternativt: lyssna aktivt på omgivningsljud. Identifiera dem utan att döma. Bil. Fågel. Kylen. Bara ljud.',
+      'Avsluta med en minuts tystnad.',
+    ],
+    tip:'Mantrat fungerar som ett fysiskt ankare — rösten i huvudet är konkret. Det passar dig som tänker i ord och begrepp snarare än bilder.'},
+  {id:'muskel',label:'Muskelavslappning',title:'Progressiv muskelavslappning',time:'15–20 min',
+    steps:[
+      'Ligg ner eller sitt djupt bakåtlutad. Ta tre djupa andetag.',
+      'Börja med fötterna. Spänn alla muskler hårt i 5 sekunder. Släpp sedan helt. Känn skillnaden.',
+      'Vaderna: spänn 5 sek, släpp. Känn avslappningen sprida sig.',
+      'Fortsätt uppåt: lår, säte, mage, händer, underarmar, axlar, ansikte. Varje grupp: spänn 5 sek, släpp.',
+      'Avsluta med att spänna hela kroppen på en gång i 5 sek. Släpp. Ligg still.',
+      'Känn tyngden i kroppen mot underlaget. Andas lugnt.',
+    ],
+    tip:'Helt konkret och fysiskt — ingen imagination krävs. Spänning och avslappning är faktiska förnimmelser. Utmärkt om tankar är svåra att stilla.'},
+  {id:'oppen',label:'Öppen uppmärksamhet',title:'Öppen uppmärksamhet',time:'10–20 min',
+    steps:[
+      'Sitt bekvämt. Blunda eller håll blicken mjukt neråt.',
+      'Låt uppmärksamheten vara öppen — ingen specifik fokuspunkt. Observera vad som händer.',
+      'En tanke dyker upp — notera den: "en tanke". Låt den passera utan bedömning.',
+      'En känsla i kroppen — notera den: "spänning i axeln". Gå vidare.',
+      'Ljud utifrån — notera dem utan att följa dem. De är bara händelser.',
+      'Målet är inte tomhet. Målet är att observera utan att fastna. Du är vittnet, inte tankarna.',
+    ],
+    tip:'Passar om du har ett aktivt sinne som hoppar mellan saker. Du behöver inte stänga av — bara titta på tankeströmmen utifrån.'},
+];
+
+function buildWeightField(exName) {
+  const wk = wkey(exName);
+  const prev = load(wk,'');
+  return '<div class="weight-row" onclick="event.stopPropagation()">'+
+    '<span class="weight-label">Vikt:</span>'+
+    '<input class="weight-input" type="text" inputmode="decimal" placeholder="kg" value="'+prev+'" onchange="save(\''+wk+'\',this.value)">'+
+    (prev ? '<span class="weight-prev">senast: '+prev+' kg</span>' : '')+
+    '</div>';
+}
+
+function buildChecks(items, dayIdx, prefix) {
+  return items.map(function(item,i){
+    const id = prefix+'_'+i;
+    const k = key(currentWeek,dayIdx,id);
+    const done = load(k,'false')==='true';
+    return '<div class="check-item'+(done?' done':'')+'" onclick="toggleCheck('+dayIdx+',\''+id+'\',this)" id="ci_'+dayIdx+'_'+id+'">'+
+      '<div class="check-box'+(done?' checked':'')+'"></div>'+
+      '<div class="check-body">'+
+        '<div class="check-name">'+item.name+'</div>'+
+        (item.sets?'<div class="check-meta">'+item.sets+'</div>':'')+
+        (item.note?'<div class="check-note">'+item.note+'</div>':'')+
+        (!item.noWeight?buildWeightField(item.name):'')+
+      '</div></div>';
+  }).join('');
+}
+
+function toggleCheck(dayIdx,id,el){
+  if(el.tagName==='INPUT') return;
+  const target = el.closest('.check-item');
+  if(!target) return;
+  const k = key(currentWeek,dayIdx,id);
+  const done = load(k,'false')!=='true';
+  save(k,done?'true':'false');
+  target.className='check-item'+(done?' done':'');
+  target.querySelector('.check-box').className='check-box'+(done?' checked':'');
+  updateProgress(dayIdx);
+  updateTabDot(dayIdx);
+}
+
+function countChecks(dayIdx){
+  let total=0,done=0;
+  document.querySelectorAll('[id^="ci_'+dayIdx+'_"]').forEach(function(el){
+    total++;
+    if(el.classList.contains('done')) done++;
+  });
+  return {total:total,done:done};
+}
+
+function updateProgress(dayIdx){
+  const c=countChecks(dayIdx);
+  const pct=c.total?Math.round(c.done/c.total*100):0;
+  const bar=document.getElementById('pbar_'+dayIdx);
+  const txt=document.getElementById('ptxt_'+dayIdx);
+  if(bar) bar.style.width=pct+'%';
+  if(txt) txt.textContent=c.done+' / '+c.total+' avklarade';
+}
+
+function updateTabDot(dayIdx){
+  const c=countChecks(dayIdx);
+  const tab=document.querySelector('.day-tab[data-day="'+dayIdx+'"]');
+  if(tab) tab.classList.toggle('has-progress',c.done>0&&c.done<c.total);
+}
+
+function buildWarmup(steps){
+  return steps.map(function(s){
+    return '<div class="tl-step"><div class="tl-dot"></div>'+
+      '<div class="tl-time">'+s.time+'</div>'+
+      '<div class="tl-name">'+s.name+'</div>'+
+      '<div class="tl-desc">'+s.desc+'</div>'+
+      (s.dose?'<div class="tl-dose">'+s.dose+'</div>':'')+
+      '</div>';
+  }).join('');
+}
+
+function buildMobilityContent(){
+  return MOBILITY.map(function(section){
+    return '<div class="section-label">'+section.section+'</div>'+
+      '<div class="card" style="padding:14px 18px;"><div class="timeline">'+
+      section.items.map(function(s){
+        return '<div class="tl-step"><div class="tl-dot"></div>'+
+          '<div class="tl-time">'+s.time+'</div>'+
+          '<div class="tl-name">'+s.name+'</div>'+
+          '<div class="tl-desc">'+s.desc+'</div>'+
+          '<div class="tl-dose">'+s.dose+'</div></div>';
+      }).join('')+
+      '</div></div>';
+  }).join('');
+}
+
+function buildMeditation(){
+  const tabs = MEDITATION.map(function(m,i){
+    return '<div class="med-tab'+(i===0?' active':'')+'" onclick="switchMed('+i+',this)">'+m.label+'</div>';
+  }).join('');
+  const methods = MEDITATION.map(function(m,i){
+    return '<div class="med-method'+(i===0?' active':'')+'" id="med_'+i+'">'+
+      '<div class="med-method-title">'+m.title+'</div>'+
+      '<div class="med-method-time">'+m.time+'</div>'+
+      m.steps.map(function(s,si){
+        return '<div class="med-step"><div class="med-step-num">'+(si+1)+'.</div><div class="med-step-text">'+s+'</div></div>';
+      }).join('')+
+      '<div class="med-tip">'+m.tip+'</div></div>';
+  }).join('');
+  return '<div class="card">'+
+    '<div class="card-title">Meditation</div>'+
+    '<div class="med-intro">Välj en metod och prova den ett par gånger innan du byter. Alla metoder fungerar utan visualiseringar — inga bilder, bara konkreta förnimmelser och ankare.</div>'+
+    '<div class="med-tabs">'+tabs+'</div>'+
+    methods+'</div>';
+}
+
+function switchMed(idx){
+  document.querySelectorAll('.med-method').forEach(function(m,i){ m.className='med-method'+(i===idx?' active':''); });
+  document.querySelectorAll('.med-tab').forEach(function(t,i){ t.className='med-tab'+(i===idx?' active':''); });
+}
+
+function buildStrengthDay(dayIdx,warmup,exercises,passLabel){
+  const reflKey='refl_w'+currentWeek+'_d'+dayIdx;
+  return '<div class="info-pill">⏱ ca 50 min · '+passLabel+'</div>'+
+    '<div class="section-label">Uppvärmning — 10 min</div>'+
+    '<div class="card"><div class="timeline">'+buildWarmup(warmup)+'</div></div>'+
+    '<div class="section-label">Styrkepass — 35–40 min</div>'+
+    '<div class="card"><div class="card-title">Övningar — bocka av när klart</div>'+buildChecks(exercises,dayIdx,'ex')+'</div>'+
+    '<div class="card"><div class="progress-wrap"><div class="progress-fill" id="pbar_'+dayIdx+'" style="width:0%"></div></div>'+
+    '<div class="progress-text" id="ptxt_'+dayIdx+'">0 / '+exercises.length+' avklarade</div></div>'+
+    '<div class="card reflection"><div class="card-title">Anteckningar</div>'+
+    '<textarea placeholder="Känsla, teknik, vad som var svårt..." onchange="save(\''+reflKey+'\',this.value)">'+load(reflKey,'')+'</textarea></div>';
+}
+
+function buildWalkDay(dayIdx){
+  const items=[{name:'Promenad utomhus',sets:'30–45 min',note:'Gärna på förmiddagen — ljuset hjälper sömnmönstret.',noWeight:true}];
+  const reflKey='refl_w'+currentWeek+'_d'+dayIdx;
+  return '<div class="info-pill">⏱ 30–45 min</div>'+
+    '<div class="card"><div class="card-title">Aktivitet</div>'+buildChecks(items,dayIdx,'walk')+'</div>'+
+    '<div class="card"><div class="progress-wrap"><div class="progress-fill" id="pbar_'+dayIdx+'" style="width:0%"></div></div>'+
+    '<div class="progress-text" id="ptxt_'+dayIdx+'">0 / 1 avklarade</div></div>'+
+    '<div class="card reflection"><div class="card-title">Anteckningar</div>'+
+    '<textarea placeholder="Hur kändes promenaden?" onchange="save(\'refl_w'+currentWeek+'_d'+dayIdx+'\',this.value)">'+load(reflKey,'')+'</textarea></div>';
+}
+
+function buildRestDay(dayIdx){
+  const reflKey='refl_w'+currentWeek+'_d'+dayIdx;
+  return '<div class="rest-card"><span class="rest-icon">🌿</span>'+
+    '<div class="rest-title">Vildag</div>'+
+    '<div class="rest-desc">Återhämtning är träning.<br>Låt kroppen vila och bygga sig starkare.</div></div>'+
+    buildMeditation()+
+    '<div class="card reflection"><div class="card-title">Reflektion</div>'+
+    '<textarea placeholder="Humör, energi, hur kroppen känns..." onchange="save(\''+reflKey+'\',this.value)">'+load(reflKey,'')+'</textarea></div>';
+}
+
+function buildMobilityPanel(dayIdx){
+  const reflKey='refl_w'+currentWeek+'_d'+dayIdx;
+  return '<div class="info-pill">⏱ 35–40 min · Lördag</div>'+
+    buildMobilityContent()+
+    '<div class="card reflection" style="margin-top:12px;"><div class="card-title">Anteckningar</div>'+
+    '<textarea placeholder="Framsteg med anklar? Hur kändes rörligheten?" onchange="save(\''+reflKey+'\',this.value)">'+load(reflKey,'')+'</textarea></div>';
+}
+
+function buildPanel(dayIdx){
+  const type=DAY_TYPE[dayIdx];
+  if(type==='styrka'&&dayIdx===0) return buildStrengthDay(dayIdx,WARMUP_A,STRENGTH_A,'Pass A');
+  if(type==='styrka'&&dayIdx===3) return buildStrengthDay(dayIdx,WARMUP_B,STRENGTH_B,'Pass B');
+  if(type==='promenad') return buildWalkDay(dayIdx);
+  if(type==='vila') return buildRestDay(dayIdx);
+  if(type==='rörlighet') return buildMobilityPanel(dayIdx);
+  return '';
+}
+
+function render(){
+  document.getElementById('dayTabs').innerHTML=DAYS.map(function(d,i){
+    return '<div class="day-tab'+(DAY_TYPE[i]==='vila'?' rest':'')+(i===currentDay?' active':'')+'" data-day="'+i+'" onclick="switchDay('+i+')">'+d+'<div class="dot"></div></div>';
+  }).join('');
+  document.getElementById('panels').innerHTML=DAYS.map(function(_,i){
+    return '<div class="panel'+(i===currentDay?' active':'')+'" id="panel_'+i+'">'+buildPanel(i)+'</div>';
+  }).join('');
+  document.getElementById('weekLabel').textContent='Vecka '+currentWeek;
+  [0,1,3,4].forEach(function(i){ updateProgress(i); });
+}
+
+function switchDay(idx){
+  currentDay=idx;
+  document.querySelectorAll('.day-tab').forEach(function(t,i){ t.classList.toggle('active',i===idx); });
+  document.querySelectorAll('.panel').forEach(function(p,i){ p.className='panel'+(i===idx?' active':''); });
+}
+
+function changeWeek(dir){
+  currentWeek=Math.max(1,currentWeek+dir);
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
